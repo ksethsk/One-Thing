@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Thing - Focused Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0f1419;
+            color: #e8e8e8;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* ===== DEBUG LOG ===== */
+        #debugLog {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: monospace;
+            max-width: 300px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 9999;
+            border: 1px solid #0f0;
+        }
+
+        .debug-line {
+            margin: 2px 0;
+            word-break: break-all;
+        }
+
+        /* ===== SETUP SCREEN ===== */
+        .setup-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .setup-header h1 {
+            font-size: 3.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+            color: #f5f5f5;
+        }
+
+        .setup-header p {
+            font-size: 1rem;
+            color: #a8a8a8;
+        }
+
+        .task-input-group {
+            margin-bottom: 30px;
+        }
+
+        #taskInput {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 1.1rem;
+            background-color: #1a1f28;
+            border: 1px solid #2a3142;
+            border-radius: 8px;
+            color: #e8e8e8;
+            outline: none;
+            margin-bottom: 20px;
+        }
+
+        #taskInput:focus {
+            border-color: #4a5f7f;
+        }
+
+        #taskInput::placeholder {
+            color: #6a7a8a;
+        }
+
+        .section-label {
+            font-size: 0.85rem;
+            color: #6a7a8a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .timer-options {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .timer-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            background-color: #1a1f28;
+            border: 2px solid #2a3142;
+            border-radius: 6px;
+            color: #a8a8a8;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .timer-btn:hover {
+            border-color: #4a5f7f;
+            color: #d8d8d8;
+        }
+
+        .timer-btn.active {
+            background-color: #f5a623;
+            border-color: #f5a623;
+            color: #0f1419;
+            font-weight: 600;
+        }
+
+        .sound-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .sound-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 16px;
+            font-size: 0.95rem;
+            background-color: #1a1f28;
+            border: 1px solid #2a3142;
+            border-radius: 6px;
+            color: #a8a8a8;
+            cursor: pointer;
+        }
+
+        .sound-btn:hover {
+            border-color: #3a4f6f;
+            color: #d8d8d8;
+        }
+
+        .sound-btn.active {
+            background-color: #2a4a5f;
+            border-color: #4a6f8f;
+            color: #f5f5f5;
+            font-weight: 500;
+        }
+
+        .streak-display {
+            text-align: center;
+            padding: 20px;
+            background-color: #1a1f28;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        }
+
+        .streak-display p {
+            font-size: 0.9rem;
+            color: #8a9aaa;
+            margin-bottom: 8px;
+        }
+
+        .streak-count {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: #f5a623;
+        }
+
+        #startBtn {
+            width: 100%;
+            padding: 16px 40px;
+            font-size: 1.1rem;
+            background-color: #2a3f5f;
+            border: 2px solid #4a5f7f;
+            border-radius: 8px;
+            color: #f5f5f5;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        #startBtn:hover:not(:disabled) {
+            background-color: #3a4f7f;
+        }
+
+        #startBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ===== FOCUS SCREEN ===== */
+        #focusScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0f1419;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        #focusScreen.active {
+            display: flex;
+        }
+
+        .focus-timer {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            font-size: 1.2rem;
+            color: #a8a8a8;
+            font-weight: 300;
+            letter-spacing: 2px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .focus-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .focus-task {
+            font-size: clamp(2rem, 8vw, 5rem);
+            font-weight: 300;
+            line-height: 1.3;
+            color: #f5f5f5;
+            max-width: 90%;
+        }
+
+        .focus-controls {
+            margin-bottom: 40px;
+        }
+
+        .pause-btn {
+            padding: 12px 30px;
+            font-size: 1rem;
+            background-color: #2a4a5f;
+            border: 2px solid #4a6f8f;
+            border-radius: 6px;
+            color: #f5f5f5;
+            cursor: pointer;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .pause-btn:hover {
+            background-color: #3a5a7f;
+            border-color: #6a8faf;
+        }
+
+        .give-up-btn {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            background-color: transparent;
+            border: 1px solid #4a5a6a;
+            border-radius: 6px;
+            color: #8a9aaa;
+            cursor: pointer;
+        }
+
+        .give-up-btn:hover {
+            border-color: #6a7a8a;
+            color: #b8c8d8;
+        }
+
+        /* ===== COMPLETION SCREEN ===== */
+        #completionScreen {
+            text-align: center;
+        }
+
+        .celebration-emoji {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .completion-message {
+            font-size: 2rem;
+            font-weight: 300;
+            color: #f5f5f5;
+            margin-bottom: 30px;
+        }
+
+        .completion-task {
+            font-size: 1.1rem;
+            color: #a8a8a8;
+            padding: 20px;
+            background-color: #1a1f28;
+            border-left: 3px solid #f5a623;
+            border-radius: 4px;
+            margin-bottom: 30px;
+        }
+
+        .streak-badge {
+            padding: 30px;
+            background-color: #1a2a3a;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .streak-badge p {
+            font-size: 0.95rem;
+            color: #8a9aaa;
+            margin-bottom: 10px;
+        }
+
+        .streak-number {
+            font-size: 3.5rem;
+            font-weight: 300;
+            color: #f5a623;
+            margin-bottom: 5px;
+        }
+
+        .streak-label {
+            font-size: 0.9rem;
+            color: #6a8a9a;
+            letter-spacing: 1px;
+        }
+
+        .completion-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .next-btn {
+            padding: 14px 30px;
+            font-size: 1rem;
+            background-color: #2a3f5f;
+            border: 2px solid #4a5f7f;
+            border-radius: 8px;
+            color: #f5f5f5;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .next-btn:hover {
+            background-color: #3a4f7f;
+        }
+
+        .next-btn.secondary {
+            background-color: transparent;
+            border-color: #3a4a5a;
+            color: #a8a8a8;
+        }
+
+        .next-btn.secondary:hover {
+            border-color: #5a6a7a;
+            color: #d8d8d8;
+        }
+
+        @media (max-width: 768px) {
+            .setup-header h1 {
+                font-size: 2.5rem;
+            }
+
+            .timer-options {
+                flex-direction: column;
+            }
+
+            .timer-btn {
+                width: 100%;
+            }
+
+            .focus-task {
+                font-size: clamp(1.5rem, 6vw, 3.5rem);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Debug Log -->
+    <div id="debugLog"></div>
+
+    <!-- Setup Screen -->
+    <div id="setupScreen" class="screen active">
+        <div class="container">
+            <div class="setup-header">
+                <h1>One Thing</h1>
+                <p>Focus on what matters</p>
+            </div>
+
+            <div class="task-input-group">
+                <input
+                    type="text"
+                    id="taskInput"
+                    placeholder="What's the one thing you need to do?"
+                    autocomplete="off"
+                    oninput="window.app.onTaskInput()"
+                    onkeypress="window.app.onTaskKeypress(event)"
+                />
+
+                <label class="section-label">Duration</label>
+                <div class="timer-options">
+                    <button class="timer-btn active" onclick="window.app.setDuration(5)">5 min</button>
+                    <button class="timer-btn" onclick="window.app.setDuration(10)">10 min</button>
+                    <button class="timer-btn" onclick="window.app.setDuration(15)">15 min</button>
+                    <button class="timer-btn" onclick="window.app.setDuration(30)">30 min</button>
+                </div>
+
+                <label class="section-label">Ambient Sound</label>
+                <div class="sound-options">
+                    <button class="sound-btn active" onclick="window.app.setSound('none')">None</button>
+                    <button class="sound-btn" onclick="window.app.setSound('rain')">Rain</button>
+                    <button class="sound-btn" onclick="window.app.setSound('whitenoise')">White Noise</button>
+                    <button class="sound-btn" onclick="window.app.setSound('cafe')">Café</button>
+                </div>
+            </div>
+
+            <div class="streak-display">
+                <p>Today's Streak</p>
+                <div class="streak-count" id="setupStreak">0</div>
+            </div>
+
+            <button id="startBtn" onclick="window.app.startFocusSession()" disabled>Start Focus Session</button>
+        </div>
+    </div>
+
+    <!-- Focus Screen -->
+    <div id="focusScreen" class="screen">
+        <div class="focus-timer" id="focusTimer">5:00</div>
+        <div class="focus-content">
+            <div class="focus-task" id="focusTask">Your task will appear here</div>
+        </div>
+        <div class="focus-controls">
+            <button class="pause-btn" id="pauseBtn" onclick="window.app.togglePause()">Pause</button>
+            <button class="give-up-btn" id="giveUpBtn" onclick="window.app.giveUpSession()">Give Up</button>
+        </div>
+    </div>
+
+    <!-- Completion Screen -->
+    <div id="completionScreen" class="screen">
+        <div class="container">
+            <div class="celebration-emoji">✨</div>
+            <div class="completion-message" id="completionMessage">You did it!</div>
+            <div class="completion-task" id="completionTask">Task completed</div>
+
+            <div class="streak-badge">
+                <p>Session Streak Today</p>
+                <div class="streak-number" id="completionStreak">1</div>
+                <div class="streak-label">SESSIONS</div>
+            </div>
+
+            <div class="completion-buttons">
+                <button class="next-btn" onclick="window.app.nextSession()">Start Another Session</button>
+                <button class="next-btn secondary" onclick="window.app.backToSetup()">Back to Setup</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== GLOBAL APP OBJECT =====
+        window.app = {
+            // State
+            state: {
+                task: '',
+                duration: 5,
+                selectedSound: 'none',
+                isRunning: false,
+                isPaused: false,
+                timeRemaining: 0,
+                sessionStartTime: 0,
+                pausedTime: 0,
+                dailyStreak: 0,
+                audioContext: null,
+                soundNodes: {}
+            },
+
+            // Debug log
+            debugLog: [],
+            maxDebugLines: 20,
+
+            log: function(msg) {
+                console.log(msg);
+                this.debugLog.push(msg);
+                if (this.debugLog.length > this.maxDebugLines) {
+                    this.debugLog.shift();
+                }
+                this.updateDebugDisplay();
+            },
+
+            updateDebugDisplay: function() {
+                const logEl = document.getElementById('debugLog');
+                logEl.innerHTML = this.debugLog.map(line => 
+                    '<div class="debug-line">' + line + '</div>'
+                ).join('');
+                logEl.scrollTop = logEl.scrollHeight;
+            },
+
+            // ===== TIMER BUTTONS =====
+            setDuration: function(minutes) {
+                this.log('🔘 Duration button clicked: ' + minutes + ' min');
+                this.state.duration = minutes;
+                
+                // Update button styles
+                document.querySelectorAll('.timer-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+                
+                this.log('✓ Duration set to: ' + this.state.duration);
+            },
+
+            // ===== SOUND BUTTONS =====
+            setSound: function(sound) {
+                this.log('🔊 Sound button clicked: ' + sound);
+                this.state.selectedSound = sound;
+                
+                // Update button styles
+                document.querySelectorAll('.sound-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+                
+                this.log('✓ Sound set to: ' + this.state.selectedSound);
+            },
+
+            // ===== TASK INPUT =====
+            onTaskInput: function() {
+                const taskInput = document.getElementById('taskInput');
+                const startBtn = document.getElementById('startBtn');
+                startBtn.disabled = !taskInput.value.trim();
+                this.log('Task input: ' + (taskInput.value.trim() ? '✓ Enabled' : '✗ Disabled'));
+            },
+
+            onTaskKeypress: function(e) {
+                if (e.key === 'Enter' && !document.getElementById('startBtn').disabled) {
+                    this.startFocusSession();
+                }
+            },
+
+            // ===== FOCUS SESSION =====
+            startFocusSession: function() {
+                this.log('▶ Starting focus session...');
+                this.state.task = document.getElementById('taskInput').value.trim();
+                
+                if (!this.state.task) {
+                    alert('Please enter a task');
+                    return;
+                }
+
+                this.state.timeRemaining = this.state.duration * 60;
+                this.state.isRunning = true;
+                this.state.sessionStartTime = Date.now();
+
+                document.getElementById('focusTask').textContent = this.state.task;
+                document.getElementById('focusTimer').textContent = this.formatTime(this.state.timeRemaining);
+
+                this.initAudioContext();
+                this.playAmbientSound(this.state.selectedSound);
+                this.showScreen('focusScreen');
+                
+                this.log('✓ Focus session started');
+                this.log('Task: ' + this.state.task);
+                this.log('Duration: ' + this.state.duration + ' min');
+                this.log('Sound: ' + this.state.selectedSound);
+
+                if (document.getElementById('focusScreen').requestFullscreen) {
+                    document.getElementById('focusScreen').requestFullscreen().catch(() => {});
+                }
+
+                this.updateTimer();
+            },
+
+            formatTime: function(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return mins.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
+            },
+
+            updateTimer: function() {
+                if (!this.state.isRunning || this.state.isPaused) return;
+
+                const elapsed = Math.floor((Date.now() - this.state.sessionStartTime) / 1000);
+                this.state.timeRemaining = Math.max(0, this.state.duration * 60 - elapsed);
+
+                document.getElementById('focusTimer').textContent = this.formatTime(this.state.timeRemaining);
+
+                if (this.state.timeRemaining <= 0) {
+                    this.completeSession();
+                } else {
+                    requestAnimationFrame(() => this.updateTimer());
+                }
+            },
+
+            completeSession: function() {
+                this.log('✓ Session completed!');
+                this.state.isRunning = false;
+                this.stopAmbientSound();
+
+                if (document.fullscreenElement) {
+                    document.exitFullscreen().catch(() => {});
+                }
+
+                this.playCompletionChime();
+                this.incrementDailyStreak();
+
+                document.getElementById('completionTask').textContent = '"' + this.state.task + '"';
+                document.getElementById('completionStreak').textContent = this.state.dailyStreak;
+
+                const messages = ['You did it!', 'Fantastic work!', 'Mission accomplished!', 'You crushed it!'];
+                document.getElementById('completionMessage').textContent = messages[Math.floor(Math.random() * messages.length)];
+
+                this.showScreen('completionScreen');
+            },
+
+            togglePause: function() {
+                if (!this.state.isRunning) return;
+
+                this.state.isPaused = !this.state.isPaused;
+                const pauseBtn = document.getElementById('pauseBtn');
+
+                if (this.state.isPaused) {
+                    this.log('Paused');
+                    this.state.pausedTime = Date.now();
+                    pauseBtn.textContent = 'Resume';
+                    this.stopAmbientSound();
+                } else {
+                    this.log('Resumed');
+                    this.state.sessionStartTime += Date.now() - this.state.pausedTime;
+                    pauseBtn.textContent = 'Pause';
+                    this.playAmbientSound(this.state.selectedSound);
+                    this.updateTimer();
+                }
+            },
+
+            giveUpSession: function() {
+                this.log('Session cancelled');
+                this.state.isRunning = false;
+                this.state.isPaused = false;
+                this.stopAmbientSound();
+
+                if (document.fullscreenElement) {
+                    document.exitFullscreen().catch(() => {});
+                }
+
+                this.showScreen('setupScreen');
+                document.getElementById('taskInput').focus();
+            },
+
+            // ===== COMPLETION BUTTONS =====
+            nextSession: function() {
+                this.log('▶ Starting next session...');
+                document.getElementById('taskInput').value = '';
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('taskInput').focus();
+                this.showScreen('setupScreen');
+            },
+
+            backToSetup: function() {
+                this.log('↩ Back to setup');
+                document.getElementById('taskInput').value = '';
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('taskInput').focus();
+                this.showScreen('setupScreen');
+            },
+
+            // ===== SCREENS =====
+            showScreen: function(screenId) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(screenId).classList.add('active');
+            },
+
+            // ===== AUDIO =====
+            initAudioContext: function() {
+                if (!this.state.audioContext) {
+                    this.state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.log('🔊 Audio context initialized');
+                }
+                if (this.state.audioContext.state === 'suspended') {
+                    this.state.audioContext.resume();
+                }
+            },
+
+            createWhiteNoise: function(duration) {
+                const bufferSize = this.state.audioContext.sampleRate * duration;
+                const buffer = this.state.audioContext.createBuffer(1, bufferSize, this.state.audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                return buffer;
+            },
+
+            createRainSound: function(duration) {
+                const bufferSize = this.state.audioContext.sampleRate * duration;
+                const buffer = this.state.audioContext.createBuffer(1, bufferSize, this.state.audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                const sampleRate = this.state.audioContext.sampleRate;
+
+                for (let i = 0; i < bufferSize; i++) {
+                    const t = i / sampleRate;
+                    const rumble = Math.sin(t * 2 * Math.PI * 40) * 0.3;
+                    const drops = Math.random() * 0.7;
+                    const envelope = Math.sin((t % 1) * Math.PI) * 0.5 + 0.5;
+                    data[i] = (rumble + drops) * envelope * 0.4;
+                }
+                return buffer;
+            },
+
+            createCafeSound: function(duration) {
+                const bufferSize = this.state.audioContext.sampleRate * duration;
+                const buffer = this.state.audioContext.createBuffer(1, bufferSize, this.state.audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                const sampleRate = this.state.audioContext.sampleRate;
+
+                for (let i = 0; i < bufferSize; i++) {
+                    const t = i / sampleRate;
+                    const layer1 = Math.sin(t * 2 * Math.PI * 120) * 0.2;
+                    const layer2 = Math.sin(t * 2 * Math.PI * 280) * 0.15;
+                    const layer3 = Math.sin(t * 2 * Math.PI * 450) * 0.1;
+                    const noise = (Math.random() * 2 - 1) * 0.3;
+                    const combined = layer1 + layer2 + layer3 + noise;
+                    const envelope = Math.sin((t % 2) * Math.PI * 0.5) * 0.5 + 0.5;
+                    data[i] = combined * envelope * 0.3;
+                }
+                return buffer;
+            },
+
+            playAmbientSound: function(soundType) {
+                this.stopAmbientSound();
+
+                if (soundType === 'none') return;
+
+                const duration = 10;
+                let buffer;
+
+                switch (soundType) {
+                    case 'rain':
+                        buffer = this.createRainSound(duration);
+                        break;
+                    case 'whitenoise':
+                        buffer = this.createWhiteNoise(duration);
+                        break;
+                    case 'cafe':
+                        buffer = this.createCafeSound(duration);
+                        break;
+                    default:
+                        return;
+                }
+
+                const source = this.state.audioContext.createBufferSource();
+                source.buffer = buffer;
+                source.loop = true;
+
+                const gainNode = this.state.audioContext.createGain();
+                gainNode.gain.value = 0.3;
+
+                source.connect(gainNode);
+                gainNode.connect(this.state.audioContext.destination);
+
+                source.start(0);
+                this.state.soundNodes.ambient = { source, gainNode };
+            },
+
+            stopAmbientSound: function() {
+                if (this.state.soundNodes.ambient) {
+                    try {
+                        this.state.soundNodes.ambient.source.stop();
+                    } catch (e) {}
+                    this.state.soundNodes.ambient = null;
+                }
+            },
+
+            playCompletionChime: function() {
+                const now = this.state.audioContext.currentTime;
+                this.log('ALARM: Timer expired!');
+                
+                // Prominent alarm: high-high-low pattern repeated 3 times
+                for (let repeat = 0; repeat < 3; repeat++) {
+                    // First high beep
+                    this.playAlarmBeep(now + (repeat * 1.5), 800, 0.3);
+                    // Second high beep
+                    this.playAlarmBeep(now + (repeat * 1.5) + 0.4, 800, 0.3);
+                    // Low beep
+                    this.playAlarmBeep(now + (repeat * 1.5) + 0.8, 600, 0.5);
+                }
+            },
+
+            playAlarmBeep: function(startTime, frequency, duration) {
+                const osc = this.state.audioContext.createOscillator();
+                const gain = this.state.audioContext.createGain();
+
+                osc.frequency.value = frequency;
+                osc.type = 'sine';
+
+                gain.gain.setValueAtTime(0.5, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+                osc.connect(gain);
+                gain.connect(this.state.audioContext.destination);
+
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            },
+
+            // ===== STREAK =====
+            loadDailyStreak: function() {
+                const today = new Date().toDateString();
+                const stored = localStorage.getItem('oneThing_streak_date');
+                const count = parseInt(localStorage.getItem('oneThing_streak_count') || '0');
+
+                if (stored === today) {
+                    this.state.dailyStreak = count;
+                } else {
+                    this.state.dailyStreak = 0;
+                    localStorage.setItem('oneThing_streak_date', today);
+                    localStorage.setItem('oneThing_streak_count', '0');
+                }
+                
+                this.log('📊 Streak loaded: ' + this.state.dailyStreak);
+            },
+
+            incrementDailyStreak: function() {
+                this.state.dailyStreak++;
+                localStorage.setItem('oneThing_streak_count', this.state.dailyStreak.toString());
+                document.getElementById('setupStreak').textContent = this.state.dailyStreak;
+                this.log('📊 Streak incremented to: ' + this.state.dailyStreak);
+            },
+
+            // ===== INIT =====
+            init: function() {
+                this.log('🚀 App initializing...');
+                this.loadDailyStreak();
+                document.getElementById('setupStreak').textContent = this.state.dailyStreak;
+                this.log('✓ App ready!');
+            }
+        };
+
+        // Initialize app when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => window.app.init());
+        } else {
+            window.app.init();
+        }
+    </script>
+</body>
+</html>
