@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>One Thing - Focused Timer</title>
+    <title>One Thing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@300;400;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -11,864 +12,1122 @@
             box-sizing: border-box;
         }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #0f1419;
-            color: #e8e8e8;
+        :root {
+            --bg-primary: #1a1a1a;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a0a0a0;
+            --accent: #ffd700;
+            --timer-bg: rgba(255, 255, 255, 0.05);
         }
 
         body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            font-family: 'Crimson Pro', serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
         }
 
-        .container {
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .screen {
-            display: none;
-        }
-
-        .screen.active {
-            display: block;
-        }
-
-        /* ===== DEBUG LOG ===== */
-        #debugLog {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background-color: rgba(0, 0, 0, 0.9);
-            color: #0f0;
-            padding: 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-family: monospace;
-            max-width: 300px;
-            max-height: 150px;
-            overflow-y: auto;
-            z-index: 9999;
-            border: 1px solid #0f0;
-        }
-
-        .debug-line {
-            margin: 2px 0;
-            word-break: break-all;
-        }
-
-        /* ===== SETUP SCREEN ===== */
-        .setup-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .setup-header h1 {
-            font-size: 3.5rem;
-            font-weight: 300;
-            margin-bottom: 10px;
-            color: #f5f5f5;
-        }
-
-        .setup-header p {
-            font-size: 1rem;
-            color: #a8a8a8;
-        }
-
-        .task-input-group {
-            margin-bottom: 30px;
-        }
-
-        #taskInput {
-            width: 100%;
-            padding: 16px 20px;
-            font-size: 1.1rem;
-            background-color: #1a1f28;
-            border: 1px solid #2a3142;
-            border-radius: 8px;
-            color: #e8e8e8;
-            outline: none;
-            margin-bottom: 20px;
-        }
-
-        #taskInput:focus {
-            border-color: #4a5f7f;
-        }
-
-        #taskInput::placeholder {
-            color: #6a7a8a;
-        }
-
-        .section-label {
-            font-size: 0.85rem;
-            color: #6a7a8a;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            display: block;
-        }
-
-        .timer-options {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .timer-btn {
-            flex: 1;
-            min-width: 80px;
-            padding: 12px 20px;
-            font-size: 1rem;
-            background-color: #1a1f28;
-            border: 2px solid #2a3142;
-            border-radius: 6px;
-            color: #a8a8a8;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .timer-btn:hover {
-            border-color: #4a5f7f;
-            color: #d8d8d8;
-        }
-
-        .timer-btn.active {
-            background-color: #f5a623;
-            border-color: #f5a623;
-            color: #0f1419;
-            font-weight: 600;
-        }
-
-        .sound-options {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
-        }
-
-        .sound-btn {
-            flex: 1;
-            min-width: 100px;
-            padding: 10px 16px;
-            font-size: 0.95rem;
-            background-color: #1a1f28;
-            border: 1px solid #2a3142;
-            border-radius: 6px;
-            color: #a8a8a8;
-            cursor: pointer;
-        }
-
-        .sound-btn:hover {
-            border-color: #3a4f6f;
-            color: #d8d8d8;
-        }
-
-        .sound-btn.active {
-            background-color: #2a4a5f;
-            border-color: #4a6f8f;
-            color: #f5f5f5;
-            font-weight: 500;
-        }
-
-        .streak-display {
-            text-align: center;
-            padding: 20px;
-            background-color: #1a1f28;
-            border-radius: 6px;
-            margin-bottom: 30px;
-        }
-
-        .streak-display p {
-            font-size: 0.9rem;
-            color: #8a9aaa;
-            margin-bottom: 8px;
-        }
-
-        .streak-count {
-            font-size: 2.5rem;
-            font-weight: 300;
-            color: #f5a623;
-        }
-
-        #startBtn {
-            width: 100%;
-            padding: 16px 40px;
-            font-size: 1.1rem;
-            background-color: #2a3f5f;
-            border: 2px solid #4a5f7f;
-            border-radius: 8px;
-            color: #f5f5f5;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        #startBtn:hover:not(:disabled) {
-            background-color: #3a4f7f;
-        }
-
-        #startBtn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* ===== FOCUS SCREEN ===== */
-        #focusScreen {
+        /* Animated Backgrounds */
+        .ambient-background {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #0f1419;
-            display: none;
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 1s ease;
+            pointer-events: none;
+        }
+
+        .ambient-background.active {
+            opacity: 1;
+        }
+
+        /* Rain Background */
+        #rain-bg {
+            background: linear-gradient(to bottom, #2c3e50 0%, #34495e 100%);
+        }
+
+        .rain-drop {
+            position: absolute;
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.4));
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh);
+            }
+        }
+
+        /* Breeze Background */
+        #breeze-bg {
+            background: linear-gradient(to bottom, #87CEEB 0%, #B0D4E3 100%);
+        }
+
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 100px;
+            animation: drift linear infinite;
+        }
+
+        .cloud::before,
+        .cloud::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 100px;
+        }
+
+        @keyframes drift {
+            from {
+                transform: translateX(-200px);
+            }
+            to {
+                transform: translateX(calc(100vw + 200px));
+            }
+        }
+
+        /* Sea Waves Background */
+        #waves-bg {
+            background: linear-gradient(to bottom, #0077be 0%, #003d5c 50%, #001f3f 100%);
+            overflow: hidden;
+        }
+
+        .wave {
+            position: absolute;
+            width: 200%;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 45%;
+            animation: wave-motion ease-in-out infinite;
+            left: -50%;
+        }
+
+        @keyframes wave-motion {
+            0%, 100% {
+                transform: translateX(0) translateY(0);
+            }
+            50% {
+                transform: translateX(15%) translateY(-20px);
+            }
+        }
+
+        .foam {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.2) 70%, transparent 100%);
+            border-radius: 50%;
+            animation: foam-drift linear infinite;
+        }
+
+        @keyframes foam-drift {
+            0% {
+                transform: translateX(-100px) scale(0.8);
+                opacity: 0.4;
+            }
+            50% {
+                opacity: 0.8;
+                transform: translateX(50vw) scale(1.3);
+            }
+            100% {
+                transform: translateX(calc(100vw + 100px)) scale(0.6);
+                opacity: 0.3;
+            }
+        }
+
+        .seagull {
+            position: absolute;
+            width: 40px;
+            height: 20px;
+            animation: seagull-fly linear infinite;
+        }
+
+        .seagull::before,
+        .seagull::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+        }
+
+        .seagull::before {
+            left: 0;
+            transform: rotate(-20deg);
+        }
+
+        .seagull::after {
+            right: 0;
+            transform: rotate(20deg);
+        }
+
+        @keyframes seagull-fly {
+            from {
+                transform: translateX(-100px) translateY(0);
+            }
+            to {
+                transform: translateX(calc(100vw + 100px)) translateY(-30px);
+            }
+        }
+
+        /* Cafe Background */
+        #cafe-bg {
+            background: linear-gradient(135deg, #6B3410 0%, #8B4513 30%, #A0522D 60%, #CD853F 100%);
+        }
+
+        .cafe-element {
+            position: absolute;
+            opacity: 0.5;
+        }
+
+        .window {
+            width: 200px;
+            height: 300px;
+            background: linear-gradient(to bottom, rgba(135, 206, 250, 0.6), rgba(255, 255, 255, 0.4));
+            border: 8px solid rgba(101, 67, 33, 0.8);
+            border-radius: 10px 10px 0 0;
+            box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .window::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: rgba(101, 67, 33, 0.6);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .window::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: rgba(101, 67, 33, 0.6);
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .couch {
+            width: 250px;
+            height: 120px;
+            background: linear-gradient(to bottom, rgba(255, 140, 0, 0.7), rgba(218, 112, 0, 0.6));
+            border-radius: 15px 15px 5px 5px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .couch::before,
+        .couch::after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 100px;
+            background: linear-gradient(to right, rgba(255, 140, 0, 0.7), rgba(218, 112, 0, 0.6));
+            border-radius: 10px;
+            top: -20px;
+        }
+
+        .couch::before {
+            left: -10px;
+        }
+
+        .couch::after {
+            right: -10px;
+        }
+
+        .coffee-table {
+            width: 180px;
+            height: 100px;
+            background: linear-gradient(to bottom, rgba(101, 67, 33, 0.7), rgba(139, 90, 43, 0.6));
+            border-radius: 50%;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .coffee-cup {
+            position: absolute;
+            width: 40px;
+            height: 50px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.6), rgba(200, 200, 200, 0.5));
+            border-radius: 5px 5px 10px 10px;
+            opacity: 0.6;
+        }
+
+        .coffee-cup::before {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 20px;
+            background: transparent;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            border-radius: 0 50% 50% 0;
+            right: -12px;
+            top: 10px;
+        }
+
+        .lamp {
+            position: absolute;
+            width: 100px;
+            height: 150px;
+            opacity: 0.4;
+        }
+
+        .lamp::before {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(255, 220, 150, 0.6) 0%, transparent 70%);
+            border-radius: 50%;
+            top: 0;
+            left: 10px;
+        }
+
+        .lamp::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 60px;
+            background: rgba(101, 67, 33, 0.7);
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .chair {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            opacity: 0.5;
+        }
+
+        .chair::before {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 50px;
+            background: linear-gradient(to bottom, rgba(139, 69, 19, 0.7), rgba(101, 67, 33, 0.6));
+            border-radius: 5px;
+            bottom: 0;
+        }
+
+        .chair::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 40px;
+            background: linear-gradient(to bottom, rgba(139, 69, 19, 0.7), rgba(101, 67, 33, 0.6));
+            border-radius: 5px 5px 0 0;
+            top: 0;
+        }
+
+        .plant {
+            position: absolute;
+            width: 80px;
+            height: 100px;
+            opacity: 0.5;
+        }
+
+        .plant::before {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 50px;
+            background: radial-gradient(circle, rgba(34, 139, 34, 0.7) 0%, rgba(46, 125, 50, 0.5) 100%);
+            border-radius: 50% 50% 40% 40%;
+            top: 0;
+            left: 20px;
+        }
+
+        .plant::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 40px;
+            background: linear-gradient(to bottom, rgba(160, 82, 45, 0.7), rgba(139, 69, 19, 0.6));
+            bottom: 0;
+            left: 25px;
+            border-radius: 0 0 5px 5px;
+        }
+
+        .counter {
+            position: absolute;
+            width: 300px;
+            height: 120px;
+            background: linear-gradient(to bottom, rgba(101, 67, 33, 0.8), rgba(139, 90, 43, 0.7));
+            border-radius: 10px 10px 0 0;
+            opacity: 0.5;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .counter::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(to bottom, rgba(160, 82, 45, 0.8), rgba(139, 69, 19, 0.7));
+            top: 0;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .picture-frame {
+            position: absolute;
+            width: 100px;
+            height: 120px;
+            background: linear-gradient(135deg, rgba(101, 67, 33, 0.7), rgba(139, 90, 43, 0.6));
+            border: 5px solid rgba(139, 69, 19, 0.8);
+            border-radius: 5px;
+            opacity: 0.4;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .picture-frame::before {
+            content: '';
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            background: radial-gradient(circle, rgba(255, 220, 150, 0.5) 0%, rgba(200, 150, 100, 0.4) 100%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .shelf {
+            position: absolute;
+            width: 200px;
+            height: 15px;
+            background: linear-gradient(to bottom, rgba(101, 67, 33, 0.8), rgba(80, 50, 20, 0.7));
+            border-radius: 3px;
+            opacity: 0.5;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .small-table {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            opacity: 0.5;
+        }
+
+        .small-table::before {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 60px;
+            background: linear-gradient(to bottom, rgba(139, 90, 43, 0.7), rgba(101, 67, 33, 0.6));
+            border-radius: 50%;
+            bottom: 20px;
+            left: 10px;
+        }
+
+        .small-table::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 25px;
+            background: rgba(101, 67, 33, 0.7);
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .chair {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            opacity: 0.5;
+        }
+
+        .chair::before {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(to bottom, rgba(139, 69, 19, 0.7), rgba(101, 67, 33, 0.6));
+            border-radius: 5px;
+            bottom: 20px;
+        }
+
+        .chair::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 70px;
+            background: linear-gradient(to right, rgba(139, 69, 19, 0.7), rgba(101, 67, 33, 0.6));
+            border-radius: 5px 5px 0 0;
+            bottom: 20px;
+            left: 5px;
+        }
+
+        .plant {
+            position: absolute;
+            width: 80px;
+            height: 100px;
+            opacity: 0.5;
+        }
+
+        .plant::before {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(34, 139, 34, 0.6) 0%, rgba(0, 100, 0, 0.4) 100%);
+            border-radius: 50% 50% 50% 0;
+            top: 0;
+            left: 10px;
+            transform: rotate(-45deg);
+        }
+
+        .plant::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 50px;
+            background: rgba(139, 69, 19, 0.6);
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 5px;
+        }
+
+        .menu-board {
+            position: absolute;
+            width: 120px;
+            height: 160px;
+            background: linear-gradient(to bottom, rgba(34, 34, 34, 0.7), rgba(20, 20, 20, 0.6));
+            border: 5px solid rgba(139, 69, 19, 0.7);
+            border-radius: 5px;
+            opacity: 0.5;
+        }
+
+        .counter {
+            position: absolute;
+            width: 200px;
+            height: 100px;
+            background: linear-gradient(to bottom, rgba(139, 69, 19, 0.7), rgba(101, 67, 33, 0.6));
+            border-radius: 10px 10px 0 0;
+            opacity: 0.5;
+        }
+
+        .counter::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 20px;
+            background: rgba(101, 67, 33, 0.8);
+            top: 0;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .shelf {
+            position: absolute;
+            width: 150px;
+            height: 80px;
+            opacity: 0.4;
+        }
+
+        .shelf::before,
+        .shelf::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 8px;
+            background: rgba(139, 69, 19, 0.7);
+            border-radius: 2px;
+        }
+
+        .shelf::before {
+            top: 0;
+        }
+
+        .shelf::after {
+            bottom: 0;
+        }
+
+        /* Main Content */
+        .container {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            padding: 40px 20px 120px;
         }
 
-        #focusScreen.active {
-            display: flex;
-        }
-
-        .focus-timer {
-            position: absolute;
-            top: 30px;
-            right: 30px;
-            font-size: 1.2rem;
-            color: #a8a8a8;
-            font-weight: 300;
-            letter-spacing: 2px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .focus-content {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 40px;
-        }
-
-        .focus-task {
-            font-size: clamp(2rem, 8vw, 5rem);
-            font-weight: 300;
-            line-height: 1.3;
-            color: #f5f5f5;
-            max-width: 90%;
-        }
-
-        .focus-controls {
-            margin-bottom: 40px;
-        }
-
-        .pause-btn {
-            padding: 12px 30px;
-            font-size: 1rem;
-            background-color: #2a4a5f;
-            border: 2px solid #4a6f8f;
-            border-radius: 6px;
-            color: #f5f5f5;
-            cursor: pointer;
-            font-weight: 500;
-            margin-bottom: 15px;
-        }
-
-        .pause-btn:hover {
-            background-color: #3a5a7f;
-            border-color: #6a8faf;
-        }
-
-        .give-up-btn {
-            padding: 10px 20px;
-            font-size: 0.9rem;
-            background-color: transparent;
-            border: 1px solid #4a5a6a;
-            border-radius: 6px;
-            color: #8a9aaa;
-            cursor: pointer;
-        }
-
-        .give-up-btn:hover {
-            border-color: #6a7a8a;
-            color: #b8c8d8;
-        }
-
-        /* ===== COMPLETION SCREEN ===== */
-        #completionScreen {
-            text-align: center;
-        }
-
-        .celebration-emoji {
-            font-size: 4rem;
-            margin-bottom: 20px;
-        }
-
-        .completion-message {
+        h1 {
             font-size: 2rem;
             font-weight: 300;
-            color: #f5f5f5;
-            margin-bottom: 30px;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin-bottom: 60px;
+            color: var(--accent);
+            text-shadow: 0 2px 20px rgba(255, 215, 0, 0.3);
+            animation: fadeInDown 1s ease;
         }
 
-        .completion-task {
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .task-container {
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 60px;
+            animation: fadeIn 1s ease 0.3s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .task-label {
             font-size: 1.1rem;
-            color: #a8a8a8;
-            padding: 20px;
-            background-color: #1a1f28;
-            border-left: 3px solid #f5a623;
-            border-radius: 4px;
-            margin-bottom: 30px;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            font-family: 'Space Mono', monospace;
         }
 
-        .streak-badge {
-            padding: 30px;
-            background-color: #1a2a3a;
-            border-radius: 8px;
-            margin-bottom: 30px;
-        }
-
-        .streak-badge p {
-            font-size: 0.95rem;
-            color: #8a9aaa;
-            margin-bottom: 10px;
-        }
-
-        .streak-number {
-            font-size: 3.5rem;
+        #taskInput {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-bottom: 2px solid var(--accent);
+            color: var(--text-primary);
+            font-size: 2.5rem;
+            font-family: 'Crimson Pro', serif;
             font-weight: 300;
-            color: #f5a623;
-            margin-bottom: 5px;
+            padding: 20px 0;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
         }
 
-        .streak-label {
+        #taskInput::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        #taskInput:focus {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.02);
+        }
+
+        .ambient-controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 40px;
+            animation: fadeIn 1s ease 0.6s both;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .ambient-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-family: 'Space Mono', monospace;
             font-size: 0.9rem;
-            color: #6a8a9a;
+            cursor: pointer;
+            transition: all 0.3s ease;
             letter-spacing: 1px;
         }
 
-        .completion-buttons {
+        .ambient-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        .ambient-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg-primary);
+            font-weight: 700;
+        }
+
+        /* Countdown Timer */
+        .timer-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--timer-bg);
+            backdrop-filter: blur(10px);
+            padding: 30px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+        }
+
+        .timer-display {
+            font-family: 'Space Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .timer-controls {
+            display: flex;
             gap: 15px;
         }
 
-        .next-btn {
-            padding: 14px 30px;
-            font-size: 1rem;
-            background-color: #2a3f5f;
-            border: 2px solid #4a5f7f;
+        .timer-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            padding: 12px 24px;
             border-radius: 8px;
-            color: #f5f5f5;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
             cursor: pointer;
-            font-weight: 500;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
         }
 
-        .next-btn:hover {
-            background-color: #3a4f7f;
+        .timer-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--accent);
+            transform: translateY(-2px);
         }
 
-        .next-btn.secondary {
-            background-color: transparent;
-            border-color: #3a4a5a;
-            color: #a8a8a8;
+        .timer-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg-primary);
+            font-weight: 700;
         }
 
-        .next-btn.secondary:hover {
-            border-color: #5a6a7a;
-            color: #d8d8d8;
+        .time-presets {
+            display: flex;
+            gap: 10px;
         }
 
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
-            .setup-header h1 {
-                font-size: 2.5rem;
+            h1 {
+                font-size: 1.5rem;
+                letter-spacing: 4px;
             }
 
-            .timer-options {
+            #taskInput {
+                font-size: 1.8rem;
+            }
+
+            .ambient-controls {
                 flex-direction: column;
+                gap: 10px;
+            }
+
+            .timer-container {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .timer-display {
+                font-size: 2rem;
+            }
+
+            .timer-controls {
+                flex-direction: column;
+                width: 100%;
             }
 
             .timer-btn {
                 width: 100%;
             }
-
-            .focus-task {
-                font-size: clamp(1.5rem, 6vw, 3.5rem);
-            }
         }
     </style>
 </head>
 <body>
-    <!-- Debug Log -->
-    <div id="debugLog"></div>
+    
+    <div id="rain-bg" class="ambient-background"></div>
+    <div id="breeze-bg" class="ambient-background"></div>
+    <div id="waves-bg" class="ambient-background"></div>
+    <div id="cafe-bg" class="ambient-background">
+        
+        <div class="cafe-element window" style="top: 10%; left: 15%;"></div>
+        <div class="cafe-element window" style="top: 10%; right: 15%;"></div>
+        
+        
+        <div class="cafe-element couch" style="bottom: 20%; left: 20%;"></div>
+        <div class="cafe-element couch" style="bottom: 20%; right: 20%;"></div>
+        
+        
+        <div class="cafe-element coffee-table" style="bottom: 25%; left: 50%; transform: translateX(-50%);"></div>
+        <div class="cafe-element coffee-table" style="bottom: 25%; left: 20%; transform: scale(0.8);"></div>
+        <div class="cafe-element coffee-table" style="bottom: 25%; right: 20%; transform: scale(0.8);"></div>
+        
+        
+        <div class="cafe-element coffee-cup" style="bottom: 30%; left: 48%;"></div>
+        <div class="cafe-element coffee-cup" style="bottom: 28%; left: 52%;"></div>
+        <div class="cafe-element coffee-cup" style="bottom: 30%; left: 22%;"></div>
+        <div class="cafe-element coffee-cup" style="bottom: 30%; right: 22%;"></div>
+        
+        
+        <div class="cafe-element lamp" style="top: 15%; left: 5%;"></div>
+        <div class="cafe-element lamp" style="top: 15%; right: 5%;"></div>
+        <div class="cafe-element lamp" style="top: 15%; left: 50%; transform: translateX(-50%);"></div>
+        
+        
+        <div class="cafe-element chair" style="bottom: 22%; left: 15%;"></div>
+        <div class="cafe-element chair" style="bottom: 22%; left: 28%;"></div>
+        <div class="cafe-element chair" style="bottom: 22%; right: 15%;"></div>
+        <div class="cafe-element chair" style="bottom: 22%; right: 28%;"></div>
+        <div class="cafe-element chair" style="bottom: 35%; left: 45%;"></div>
+        <div class="cafe-element chair" style="bottom: 35%; right: 45%;"></div>
+        
+        
+        <div class="cafe-element plant" style="bottom: 15%; left: 8%;"></div>
+        <div class="cafe-element plant" style="bottom: 15%; right: 8%;"></div>
+        <div class="cafe-element plant" style="top: 40%; left: 3%;"></div>
+        <div class="cafe-element plant" style="top: 40%; right: 3%;"></div>
+        
+        
+        <div class="cafe-element counter" style="bottom: 10%; left: 50%; transform: translateX(-50%);"></div>
+        
+        
+        <div class="cafe-element menu-board" style="top: 25%; left: 50%; transform: translateX(-50%);"></div>
+        
+        
+        <div class="cafe-element shelf" style="top: 35%; left: 10%;"></div>
+        <div class="cafe-element shelf" style="top: 35%; right: 10%;"></div>
+        <div class="cafe-element shelf" style="top: 42%; left: 10%;"></div>
+        <div class="cafe-element shelf" style="top: 42%; right: 10%;"></div>
+        
+        
+        <div class="cafe-element picture-frame" style="top: 20%; left: 8%;"></div>
+        <div class="cafe-element picture-frame" style="top: 20%; right: 8%;"></div>
+        <div class="cafe-element picture-frame" style="top: 12%; left: 35%;"></div>
+        <div class="cafe-element picture-frame" style="top: 12%; right: 35%;"></div>
+        
+        
+        <div class="cafe-element small-table" style="bottom: 45%; left: 7%;"></div>
+        <div class="cafe-element small-table" style="bottom: 45%; right: 7%;"></div>
+        <div class="cafe-element small-table" style="top: 50%; left: 12%;"></div>
+        <div class="cafe-element small-table" style="top: 50%; right: 12%;"></div>
+    </div>
 
-    <!-- Setup Screen -->
-    <div id="setupScreen" class="screen active">
-        <div class="container">
-            <div class="setup-header">
-                <h1>One Thing</h1>
-                <p>Focus on what matters</p>
-            </div>
+    
+    <div class="container">
+        <h1>One Thing</h1>
+        
+        <div class="task-container">
+            <div class="task-label">What's the one thing you need to focus on?</div>
+            <input type="text" id="taskInput" placeholder="Enter your focus..." autocomplete="off">
+        </div>
 
-            <div class="task-input-group">
-                <input
-                    type="text"
-                    id="taskInput"
-                    placeholder="What's the one thing you need to do?"
-                    autocomplete="off"
-                    oninput="window.app.onTaskInput()"
-                    onkeypress="window.app.onTaskKeypress(event)"
-                />
-
-                <label class="section-label">Duration</label>
-                <div class="timer-options">
-                    <button class="timer-btn active" onclick="window.app.setDuration(5)">5 min</button>
-                    <button class="timer-btn" onclick="window.app.setDuration(10)">10 min</button>
-                    <button class="timer-btn" onclick="window.app.setDuration(15)">15 min</button>
-                    <button class="timer-btn" onclick="window.app.setDuration(30)">30 min</button>
-                </div>
-
-                <label class="section-label">Ambient Sound</label>
-                <div class="sound-options">
-                    <button class="sound-btn active" onclick="window.app.setSound('none')">None</button>
-                    <button class="sound-btn" onclick="window.app.setSound('rain')">Rain</button>
-                    <button class="sound-btn" onclick="window.app.setSound('whitenoise')">White Noise</button>
-                    <button class="sound-btn" onclick="window.app.setSound('cafe')">Café</button>
-                </div>
-            </div>
-
-            <div class="streak-display">
-                <p>Today's Streak</p>
-                <div class="streak-count" id="setupStreak">0</div>
-            </div>
-
-            <button id="startBtn" onclick="window.app.startFocusSession()" disabled>Start Focus Session</button>
+        <div class="ambient-controls">
+            <button class="ambient-btn" data-sound="rain">Rain</button>
+            <button class="ambient-btn" data-sound="breeze">Breeze</button>
+            <button class="ambient-btn" data-sound="waves">Sea Waves</button>
+            <button class="ambient-btn" data-sound="cafe">Cafe</button>
         </div>
     </div>
 
-    <!-- Focus Screen -->
-    <div id="focusScreen" class="screen">
-        <div class="focus-timer" id="focusTimer">5:00</div>
-        <div class="focus-content">
-            <div class="focus-task" id="focusTask">Your task will appear here</div>
+    
+    <div class="timer-container">
+        <div class="time-presets">
+            <button class="preset-btn" data-time="300">5m</button>
+            <button class="preset-btn" data-time="900">15m</button>
+            <button class="preset-btn" data-time="1800">30m</button>
         </div>
-        <div class="focus-controls">
-            <button class="pause-btn" id="pauseBtn" onclick="window.app.togglePause()">Pause</button>
-            <button class="give-up-btn" id="giveUpBtn" onclick="window.app.giveUpSession()">Give Up</button>
-        </div>
-    </div>
-
-    <!-- Completion Screen -->
-    <div id="completionScreen" class="screen">
-        <div class="container">
-            <div class="celebration-emoji">✨</div>
-            <div class="completion-message" id="completionMessage">You did it!</div>
-            <div class="completion-task" id="completionTask">Task completed</div>
-
-            <div class="streak-badge">
-                <p>Session Streak Today</p>
-                <div class="streak-number" id="completionStreak">1</div>
-                <div class="streak-label">SESSIONS</div>
-            </div>
-
-            <div class="completion-buttons">
-                <button class="next-btn" onclick="window.app.nextSession()">Start Another Session</button>
-                <button class="next-btn secondary" onclick="window.app.backToSetup()">Back to Setup</button>
-            </div>
+        <div class="timer-display">00:00</div>
+        <div class="timer-controls">
+            <button class="timer-btn" id="startBtn">Start</button>
+            <button class="timer-btn" id="resetBtn">Reset</button>
         </div>
     </div>
 
     <script>
-        // ===== GLOBAL APP OBJECT =====
-        window.app = {
-            // State
-            state: {
-                task: '',
-                duration: 5,
-                selectedSound: 'none',
-                isRunning: false,
-                isPaused: false,
-                timeRemaining: 0,
-                sessionStartTime: 0,
-                pausedTime: 0,
-                dailyStreak: 0,
-                audioContext: null,
-                soundNodes: {}
-            },
+        // Save task to localStorage
+        const taskInput = document.getElementById('taskInput');
+        taskInput.value = localStorage.getItem('oneThingTask') || '';
+        taskInput.addEventListener('input', () => {
+            localStorage.setItem('oneThingTask', taskInput.value);
+        });
 
-            // Debug log
-            debugLog: [],
-            maxDebugLines: 20,
-
-            log: function(msg) {
-                console.log(msg);
-                this.debugLog.push(msg);
-                if (this.debugLog.length > this.maxDebugLines) {
-                    this.debugLog.shift();
-                }
-                this.updateDebugDisplay();
-            },
-
-            updateDebugDisplay: function() {
-                const logEl = document.getElementById('debugLog');
-                logEl.innerHTML = this.debugLog.map(line => 
-                    '<div class="debug-line">' + line + '</div>'
-                ).join('');
-                logEl.scrollTop = logEl.scrollHeight;
-            },
-
-            // ===== TIMER BUTTONS =====
-            setDuration: function(minutes) {
-                this.log('🔘 Duration button clicked: ' + minutes + ' min');
-                this.state.duration = minutes;
-                
-                // Update button styles
-                document.querySelectorAll('.timer-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                event.target.classList.add('active');
-                
-                this.log('✓ Duration set to: ' + this.state.duration);
-            },
-
-            // ===== SOUND BUTTONS =====
-            setSound: function(sound) {
-                this.log('🔊 Sound button clicked: ' + sound);
-                this.state.selectedSound = sound;
-                
-                // Update button styles
-                document.querySelectorAll('.sound-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                event.target.classList.add('active');
-                
-                this.log('✓ Sound set to: ' + this.state.selectedSound);
-            },
-
-            // ===== TASK INPUT =====
-            onTaskInput: function() {
-                const taskInput = document.getElementById('taskInput');
-                const startBtn = document.getElementById('startBtn');
-                startBtn.disabled = !taskInput.value.trim();
-                this.log('Task input: ' + (taskInput.value.trim() ? '✓ Enabled' : '✗ Disabled'));
-            },
-
-            onTaskKeypress: function(e) {
-                if (e.key === 'Enter' && !document.getElementById('startBtn').disabled) {
-                    this.startFocusSession();
-                }
-            },
-
-            // ===== FOCUS SESSION =====
-            startFocusSession: function() {
-                this.log('▶ Starting focus session...');
-                this.state.task = document.getElementById('taskInput').value.trim();
-                
-                if (!this.state.task) {
-                    alert('Please enter a task');
-                    return;
-                }
-
-                this.state.timeRemaining = this.state.duration * 60;
-                this.state.isRunning = true;
-                this.state.sessionStartTime = Date.now();
-
-                document.getElementById('focusTask').textContent = this.state.task;
-                document.getElementById('focusTimer').textContent = this.formatTime(this.state.timeRemaining);
-
-                this.initAudioContext();
-                this.playAmbientSound(this.state.selectedSound);
-                this.showScreen('focusScreen');
-                
-                this.log('✓ Focus session started');
-                this.log('Task: ' + this.state.task);
-                this.log('Duration: ' + this.state.duration + ' min');
-                this.log('Sound: ' + this.state.selectedSound);
-
-                if (document.getElementById('focusScreen').requestFullscreen) {
-                    document.getElementById('focusScreen').requestFullscreen().catch(() => {});
-                }
-
-                this.updateTimer();
-            },
-
-            formatTime: function(seconds) {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                return mins.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
-            },
-
-            updateTimer: function() {
-                if (!this.state.isRunning || this.state.isPaused) return;
-
-                const elapsed = Math.floor((Date.now() - this.state.sessionStartTime) / 1000);
-                this.state.timeRemaining = Math.max(0, this.state.duration * 60 - elapsed);
-
-                document.getElementById('focusTimer').textContent = this.formatTime(this.state.timeRemaining);
-
-                if (this.state.timeRemaining <= 0) {
-                    this.completeSession();
-                } else {
-                    requestAnimationFrame(() => this.updateTimer());
-                }
-            },
-
-            completeSession: function() {
-                this.log('✓ Session completed!');
-                this.state.isRunning = false;
-                this.stopAmbientSound();
-
-                if (document.fullscreenElement) {
-                    document.exitFullscreen().catch(() => {});
-                }
-
-                this.playCompletionChime();
-                this.incrementDailyStreak();
-
-                document.getElementById('completionTask').textContent = '"' + this.state.task + '"';
-                document.getElementById('completionStreak').textContent = this.state.dailyStreak;
-
-                const messages = ['You did it!', 'Fantastic work!', 'Mission accomplished!', 'You crushed it!'];
-                document.getElementById('completionMessage').textContent = messages[Math.floor(Math.random() * messages.length)];
-
-                this.showScreen('completionScreen');
-            },
-
-            togglePause: function() {
-                if (!this.state.isRunning) return;
-
-                this.state.isPaused = !this.state.isPaused;
-                const pauseBtn = document.getElementById('pauseBtn');
-
-                if (this.state.isPaused) {
-                    this.log('Paused');
-                    this.state.pausedTime = Date.now();
-                    pauseBtn.textContent = 'Resume';
-                    this.stopAmbientSound();
-                } else {
-                    this.log('Resumed');
-                    this.state.sessionStartTime += Date.now() - this.state.pausedTime;
-                    pauseBtn.textContent = 'Pause';
-                    this.playAmbientSound(this.state.selectedSound);
-                    this.updateTimer();
-                }
-            },
-
-            giveUpSession: function() {
-                this.log('Session cancelled');
-                this.state.isRunning = false;
-                this.state.isPaused = false;
-                this.stopAmbientSound();
-
-                if (document.fullscreenElement) {
-                    document.exitFullscreen().catch(() => {});
-                }
-
-                this.showScreen('setupScreen');
-                document.getElementById('taskInput').focus();
-            },
-
-            // ===== COMPLETION BUTTONS =====
-            nextSession: function() {
-                this.log('▶ Starting next session...');
-                document.getElementById('taskInput').value = '';
-                document.getElementById('startBtn').disabled = true;
-                document.getElementById('taskInput').focus();
-                this.showScreen('setupScreen');
-            },
-
-            backToSetup: function() {
-                this.log('↩ Back to setup');
-                document.getElementById('taskInput').value = '';
-                document.getElementById('startBtn').disabled = true;
-                document.getElementById('taskInput').focus();
-                this.showScreen('setupScreen');
-            },
-
-            // ===== SCREENS =====
-            showScreen: function(screenId) {
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.getElementById(screenId).classList.add('active');
-            },
-
-            // ===== AUDIO =====
-            initAudioContext: function() {
-                if (!this.state.audioContext) {
-                    this.state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    this.log('🔊 Audio context initialized');
-                }
-                if (this.state.audioContext.state === 'suspended') {
-                    this.state.audioContext.resume();
-                }
-            },
-
-            createWhiteNoise: function(duration) {
-                const bufferSize = this.state.audioContext.sampleRate * duration;
-                const buffer = this.state.audioContext.createBuffer(1, bufferSize, this.state.audioContext.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1;
-                }
-                return buffer;
-            },
-
-            createRainSound: function(duration) {
-                const bufferSize = this.state.audioContext.sampleRate * duration;
-                const buffer = this.state.audioContext.createBuffer(1, bufferSize, this.state.audioContext.sampleRate);
-                const data = buffer.getChannelData(0);
-                const sampleRate = this.state.audioContext.sampleRate;
-
-                for (let i = 0; i < bufferSize; i++) {
-                    const t = i / sampleRate;
-                    const rumble = Math.sin(t * 2 * Math.PI * 40) * 0.3;
-                    const drops = Math.random() * 0.7;
-                    const envelope = Math.sin((t % 1) * Math.PI) * 0.5 + 0.5;
-                    data[i] = (rumble + drops) * envelope * 0.4;
-                }
-                return buffer;
-            },
-
-            createCafeSound: function(duration) {
-                const bufferSize = this.state.audioContext.sampleRate * duration;
-                const buffer = this.state.audioContext.createBuffer(1, bufferSize, this.state.audioContext.sampleRate);
-                const data = buffer.getChannelData(0);
-                const sampleRate = this.state.audioContext.sampleRate;
-
-                for (let i = 0; i < bufferSize; i++) {
-                    const t = i / sampleRate;
-                    const layer1 = Math.sin(t * 2 * Math.PI * 120) * 0.2;
-                    const layer2 = Math.sin(t * 2 * Math.PI * 280) * 0.15;
-                    const layer3 = Math.sin(t * 2 * Math.PI * 450) * 0.1;
-                    const noise = (Math.random() * 2 - 1) * 0.3;
-                    const combined = layer1 + layer2 + layer3 + noise;
-                    const envelope = Math.sin((t % 2) * Math.PI * 0.5) * 0.5 + 0.5;
-                    data[i] = combined * envelope * 0.3;
-                }
-                return buffer;
-            },
-
-            playAmbientSound: function(soundType) {
-                this.stopAmbientSound();
-
-                if (soundType === 'none') return;
-
-                const duration = 10;
-                let buffer;
-
-                switch (soundType) {
-                    case 'rain':
-                        buffer = this.createRainSound(duration);
-                        break;
-                    case 'whitenoise':
-                        buffer = this.createWhiteNoise(duration);
-                        break;
-                    case 'cafe':
-                        buffer = this.createCafeSound(duration);
-                        break;
-                    default:
-                        return;
-                }
-
-                const source = this.state.audioContext.createBufferSource();
-                source.buffer = buffer;
-                source.loop = true;
-
-                const gainNode = this.state.audioContext.createGain();
-                gainNode.gain.value = 0.3;
-
-                source.connect(gainNode);
-                gainNode.connect(this.state.audioContext.destination);
-
-                source.start(0);
-                this.state.soundNodes.ambient = { source, gainNode };
-            },
-
-            stopAmbientSound: function() {
-                if (this.state.soundNodes.ambient) {
-                    try {
-                        this.state.soundNodes.ambient.source.stop();
-                    } catch (e) {}
-                    this.state.soundNodes.ambient = null;
-                }
-            },
-
-            playCompletionChime: function() {
-                const now = this.state.audioContext.currentTime;
-                this.log('ALARM: Timer expired!');
-                
-                // Prominent alarm: high-high-low pattern repeated 3 times
-                for (let repeat = 0; repeat < 3; repeat++) {
-                    // First high beep
-                    this.playAlarmBeep(now + (repeat * 1.5), 800, 0.3);
-                    // Second high beep
-                    this.playAlarmBeep(now + (repeat * 1.5) + 0.4, 800, 0.3);
-                    // Low beep
-                    this.playAlarmBeep(now + (repeat * 1.5) + 0.8, 600, 0.5);
-                }
-            },
-
-            playAlarmBeep: function(startTime, frequency, duration) {
-                const osc = this.state.audioContext.createOscillator();
-                const gain = this.state.audioContext.createGain();
-
-                osc.frequency.value = frequency;
-                osc.type = 'sine';
-
-                gain.gain.setValueAtTime(0.5, startTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-
-                osc.connect(gain);
-                gain.connect(this.state.audioContext.destination);
-
-                osc.start(startTime);
-                osc.stop(startTime + duration);
-            },
-
-            // ===== STREAK =====
-            loadDailyStreak: function() {
-                const today = new Date().toDateString();
-                const stored = localStorage.getItem('oneThing_streak_date');
-                const count = parseInt(localStorage.getItem('oneThing_streak_count') || '0');
-
-                if (stored === today) {
-                    this.state.dailyStreak = count;
-                } else {
-                    this.state.dailyStreak = 0;
-                    localStorage.setItem('oneThing_streak_date', today);
-                    localStorage.setItem('oneThing_streak_count', '0');
-                }
-                
-                this.log('📊 Streak loaded: ' + this.state.dailyStreak);
-            },
-
-            incrementDailyStreak: function() {
-                this.state.dailyStreak++;
-                localStorage.setItem('oneThing_streak_count', this.state.dailyStreak.toString());
-                document.getElementById('setupStreak').textContent = this.state.dailyStreak;
-                this.log('📊 Streak incremented to: ' + this.state.dailyStreak);
-            },
-
-            // ===== INIT =====
-            init: function() {
-                this.log('🚀 App initializing...');
-                this.loadDailyStreak();
-                document.getElementById('setupStreak').textContent = this.state.dailyStreak;
-                this.log('✓ App ready!');
-            }
+        // Ambient Sound System
+        let currentAudio = null;
+        const audioFiles = {
+            rain: 'https://cdn.pixabay.com/audio/2022/03/10/audio_4d1d006111.mp3',
+            breeze: 'https://cdn.pixabay.com/audio/2022/03/12/audio_0929419c6f.mp3',
+            waves: 'https://cdn.pixabay.com/audio/2022/05/13/audio_257112ce03.mp3',
+            cafe: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c6b33e3b35.mp3'
         };
 
-        // Initialize app when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => window.app.init());
-        } else {
-            window.app.init();
+        const backgrounds = {
+            rain: document.getElementById('rain-bg'),
+            breeze: document.getElementById('breeze-bg'),
+            waves: document.getElementById('waves-bg'),
+            cafe: document.getElementById('cafe-bg')
+        };
+
+        // Create rain drops
+        function createRain() {
+            const rainBg = backgrounds.rain;
+            for (let i = 0; i < 100; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'rain-drop';
+                drop.style.left = Math.random() * 100 + '%';
+                drop.style.animationDuration = (Math.random() * 0.5 + 0.5) + 's';
+                drop.style.animationDelay = Math.random() * 2 + 's';
+                rainBg.appendChild(drop);
+            }
         }
+
+        // Create clouds
+        function createClouds() {
+            const breezeBg = backgrounds.breeze;
+            const cloudSizes = [
+                { width: 100, height: 60 },
+                { width: 120, height: 70 },
+                { width: 80, height: 50 }
+            ];
+
+            for (let i = 0; i < 8; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                const size = cloudSizes[Math.floor(Math.random() * cloudSizes.length)];
+                cloud.style.width = size.width + 'px';
+                cloud.style.height = size.height + 'px';
+                cloud.style.top = (Math.random() * 60 + 10) + '%';
+                cloud.style.left = Math.random() * 100 + '%';
+                cloud.style.animationDuration = (Math.random() * 40 + 40) + 's';
+                cloud.style.animationDelay = Math.random() * 10 + 's';
+
+                const before = Math.random() * 40 + 40;
+                const after = Math.random() * 40 + 40;
+                
+                const style = document.createElement('style');
+                style.textContent = `
+                    .cloud:nth-child(${i + 1})::before {
+                        width: ${before}px;
+                        height: ${before}px;
+                        left: ${Math.random() * 30}px;
+                        top: ${-before / 2}px;
+                    }
+                    .cloud:nth-child(${i + 1})::after {
+                        width: ${after}px;
+                        height: ${after}px;
+                        right: ${Math.random() * 30}px;
+                        top: ${-after / 2}px;
+                    }
+                `;
+                document.head.appendChild(style);
+
+                breezeBg.appendChild(cloud);
+            }
+        }
+
+        // Create ocean waves
+        function createWaves() {
+            const wavesBg = backgrounds.waves;
+            
+            // Create multiple wave layers for depth
+            for (let i = 0; i < 6; i++) {
+                const wave = document.createElement('div');
+                wave.className = 'wave';
+                wave.style.bottom = (i * 50) + 'px';
+                wave.style.animationDuration = (6 + i * 1.5) + 's';
+                wave.style.animationDelay = (i * 0.8) + 's';
+                wave.style.opacity = 0.2 + (i * 0.03);
+                wave.style.height = (150 + i * 20) + 'px';
+                wavesBg.appendChild(wave);
+            }
+            
+            // Create foam particles - more visible
+            for (let i = 0; i < 20; i++) {
+                const foam = document.createElement('div');
+                foam.className = 'foam';
+                foam.style.bottom = (Math.random() * 300 + 50) + 'px';
+                foam.style.animationDuration = (Math.random() * 20 + 15) + 's';
+                foam.style.animationDelay = Math.random() * 10 + 's';
+                foam.style.width = (Math.random() * 60 + 40) + 'px';
+                foam.style.height = (Math.random() * 60 + 40) + 'px';
+                wavesBg.appendChild(foam);
+            }
+
+            // Create seagulls
+            for (let i = 0; i < 3; i++) {
+                const seagull = document.createElement('div');
+                seagull.className = 'seagull';
+                seagull.style.top = (Math.random() * 40 + 10) + '%';
+                seagull.style.animationDuration = (Math.random() * 20 + 20) + 's';
+                seagull.style.animationDelay = (i * 5) + 's';
+                wavesBg.appendChild(seagull);
+            }
+        }
+
+        createRain();
+        createClouds();
+        createWaves();
+
+        // Ambient controls
+        document.querySelectorAll('.ambient-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const soundType = this.dataset.sound;
+                
+                // Toggle active state
+                document.querySelectorAll('.ambient-btn').forEach(b => b.classList.remove('active'));
+                
+                if (currentAudio && currentAudio.dataset.type === soundType) {
+                    // Stop current sound
+                    currentAudio.pause();
+                    currentAudio = null;
+                    Object.values(backgrounds).forEach(bg => bg.classList.remove('active'));
+                } else {
+                    // Play new sound
+                    this.classList.add('active');
+                    
+                    if (currentAudio) {
+                        currentAudio.pause();
+                    }
+                    
+                    currentAudio = new Audio(audioFiles[soundType]);
+                    currentAudio.dataset.type = soundType;
+                    currentAudio.loop = true;
+                    currentAudio.volume = 0.5;
+                    currentAudio.play().catch(e => {});
+                    
+                    // Show corresponding background
+                    Object.values(backgrounds).forEach(bg => bg.classList.remove('active'));
+                    backgrounds[soundType].classList.add('active');
+                }
+            });
+        });
+
+        // Timer System
+        let timerInterval = null;
+        let timeRemaining = 0;
+        let isRunning = false;
+
+        const timerDisplay = document.querySelector('.timer-display');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            timerDisplay.textContent = formatTime(timeRemaining);
+        }
+
+        function startTimer() {
+            if (timeRemaining === 0) {
+                timeRemaining = 1800; // Default 30 minutes
+            }
+            
+            isRunning = true;
+            startBtn.textContent = 'Pause';
+            startBtn.classList.add('active');
+            
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateDisplay();
+                
+                if (timeRemaining === 0) {
+                    stopTimer();
+                    playTimerSound();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            startBtn.textContent = 'Start';
+            startBtn.classList.remove('active');
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timeRemaining = 0;
+            updateDisplay();
+        }
+
+        function playTimerSound() {
+            const audio = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_6a1535f3e0.mp3');
+            audio.play().catch(e => {});
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (isRunning) {
+                stopTimer();
+            } else {
+                startTimer();
+            }
+        });
+
+        resetBtn.addEventListener('click', resetTimer);
+
+        // Preset buttons
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const time = parseInt(this.dataset.time);
+                timeRemaining = time;
+                updateDisplay();
+                if (isRunning) {
+                    stopTimer();
+                }
+            });
+        });
+
+        updateDisplay();
     </script>
 </body>
 </html>
